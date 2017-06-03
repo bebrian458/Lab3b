@@ -1,6 +1,5 @@
 #!/bin/sh
 
 ARG=$1
-
 python lab3b.py $ARG
 

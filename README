@@ -2,3 +2,12 @@ NAME: Brian Be
 EMAIL: bebrian458@gmail.com
 UID: 204612203
 
+// Overview
+
+
+// References
+https://stackoverflow.com/questions/14016742/detect-and-print-if-no-command-line-argument-is-provided
+	Used to figure out how to access python arguments
+
+https://docs.python.org/2/library/csv.html
+	Documentation for using csv module
