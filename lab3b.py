@@ -53,12 +53,29 @@ def readGroupdesc(groupdesc):
 				groupdesc.g_inode_bitmap_num = r[7]
 				groupdesc.g_itable_num = r[8]
 
+def readBfree(list):
+	with open(arg1, 'r') as csvfile:
+		reader = csv.reader(csvfile, delimiter=',', quotechar='|')
+		for r in reader:
+			if r[0] == "BFREE":
+				list.append(r[1])
+
+def readIfree(list):
+	with open(arg1, 'r') as csvfile:
+		reader = csv.reader(csvfile, delimiter=',', quotechar='|')
+		for r in reader:
+			if r[0] == "IFREE":
+				list.append(r[1])
+
+
 
 
 def main():
 	print "The input file name is:", arg1
 	superblock = Superblock()
 	groupdesc = Groupdesc()
+	bfree_list = []
+	ifree_list = []
 	readSuperblock(superblock)
 	# print superblock.num_blocks
 	# print superblock.num_inodes
@@ -76,6 +93,10 @@ def main():
 	# print groupdesc.g_block_bitmap_num
 	# print groupdesc.g_inode_bitmap_num
 	# print groupdesc.g_itable_num
+	readBfree(bfree_list)
+	readIfree(ifree_list)
+	# for elem in ifree_list:
+	# 	print elem
 
 
 
