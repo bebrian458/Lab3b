@@ -31,9 +31,10 @@ class Block:
 		self.offset_num = offset_num
 
 class Inode:
-	def __init__(self, inode_num, numlinks):
+	def __init__(self, inode_num, numlinks, mode):
 		self.inode_num = inode_num
 		self.numlinks = numlinks
+		self.mode = mode
 		self.block_pointers = []
 		self.blocks = []
 
@@ -49,13 +50,16 @@ class Indirect:
 		self.level = level
 		self.block_offset = block_offset
 
-
 # Globals
 superblock = Superblock()
 groupdesc = Groupdesc()
 bfree_list = []
 ifree_list = []
 inode_list = []
+indirect_block_list = []
+directory_list = []
+allocated_inodes = set()
+unallocated_inodes = set()
 marked_blocks = set()
 start_data_blocks = 1	# change later
 
@@ -107,12 +111,43 @@ def readInode(list):
 		reader = csv.reader(csvfile, delimiter=',', quotechar='|')
 		for r in reader:
 			if r[0] == "INODE":
-				new_inode = Inode(int(r[1]), int(r[6]))
-				for index in range(12, 27):
+				new_inode = Inode(int(r[1]), int(r[6]), int(r[3]))
+				for index in range(12, 24):
 					new_inode.block_pointers.append(int(r[index]))
-					new_block = Block(int(r[index]), "BLOCK", "NONE", int(r[1]), index)
+					new_block = Block(int(r[index]), "BLOCK", "NONE", int(r[1]), index-12)
 					new_inode.blocks.append(new_block)
+				new_block = Block(int(r[24]), "INDIRECT BLOCK", "NONE", int(r[1]), 12)
+				new_inode.blocks.append(new_block)
+				new_block = Block(int(r[25]), "DOUBLE INDIRECT BLOCK", "NONE", int(r[1]), 13)
+				new_inode.blocks.append(new_block)
+				new_block = Block(int(r[26]), "TRIPPLE INDIRECT BLOCK", "NONE", int(r[1]), 14)
+				new_inode.blocks.append(new_block)
 				list.append(new_inode)
+
+def readIndirect(list):
+	with open(arg1, 'r') as csvfile:
+		reader = csv.reader(csvfile, delimiter=',', quotechar='|')
+		for r in reader:
+			if r[0] == "INDIRECT":
+				if r[2] == "1":
+					new_block = Block(int(r[5]), "BLOCK", "NONE", int(r[1]), int(r[3]))
+					list.append(new_block)
+				if r[2] == "1":
+					new_block = Block(int(r[4]), "INDIRECT BLOCK", "NONE", int(r[1]), int(r[3]))
+					list.append(new_block)
+				if r[2] == "2":
+					new_block = Block(int(r[4]), "DOUBLE INDIRECT BLOCK", "NONE", int(r[1]), int(r[3]))
+					list.append(new_block)
+				if r[2] == "3":
+					new_block = Block(int(r[4]), "TRIPPLE INDIRECT BLOCK", "NONE", int(r[1]), int(r[3]))
+					list.append(new_block)
+
+def readDirent(list):
+	with open(arg1, 'r') as csvfile:
+		reader = csv.reader(csvfile, delimiter=',', quotechar='|')
+		for r in reader:
+			if r[0] == "DIRENT":
+				list.append(int(r[3]))
 
 def isValidBlock(block):
 	
@@ -172,13 +207,26 @@ def checkBlock(block):
 		if checkReserved(block) != 1:
 		 	if checkFree(block) != 1:
 				updateState(block)
+		marked_blocks.add(block.blocknum)
 
 	# At this point, referenced blocks should be assigned a state other than none
 	# if block.blockstate == "NONE":
 	# 	block.blockstate = "UNREFERENCED"
 	# 	print "UNREFERENCED BLOCK", block.blocknum
 
-	marked_blocks.add(block.blocknum)
+def checkMode(inode):
+	if inode.mode != 0:
+		allocated_inodes.add(inode.inode_num)
+	else:
+		unallocated_inodes.add(inode.inode_num)
+
+def checkLinkCount(inode):
+	ref_count = 0
+	for i in directory_list:
+		if i == inode.inode_num:
+			ref_count+=1
+	if ref_count != inode.numlinks:
+		print "INODE", inode.inode_num, "HAS", ref_count, "LINKS BUT LINKCOUNT IS", inode.numlinks
 
 
 def main():
@@ -189,6 +237,8 @@ def main():
 	readBfree(bfree_list)
 	readIfree(ifree_list)
 	readInode(inode_list)
+	readIndirect(indirect_block_list)
+	readDirent(directory_list)
 
 	# Identify start of legal data blocks
 	blocks_occupied_by_itable = (superblock.inodesize*superblock.inodes_per_group)/superblock.blocksize
@@ -200,16 +250,40 @@ def main():
 	
 	# Check validity of ever block in inode
 	for i in inode_list:
-		for index in range (0,14):
+		checkMode(i)
+		checkLinkCount(i)
+		for index in range (0,12):	# might be 0-15, but will then need to take care of duplicates
 			if i.blocks[index] != 0:
 				checkBlock(i.blocks[index])
 
-	# print marked_blocks
+	for i in indirect_block_list:
+		checkBlock(i)
 
 	# Print unreferenced blocks
 	for blocknum in range (1, superblock.num_blocks):
 			if not blocknum in bfree_list and not blocknum in marked_blocks:
 				print "UNREFERENCED BLOCK", blocknum
+
+	# All reserved inodes should be in the allocated list
+	for i in range (1, superblock.first_nr_ino):
+		allocated_inodes.add(i)
+
+	# All inodes on ifree list should be in unallocated list
+	for i in ifree_list:
+		unallocated_inodes.add(i)
+
+	# Every unreferenced inode should be in unallocated list
+	for i in range (1, superblock.num_inodes):
+		if not i in allocated_inodes and not i in unallocated_inodes:
+			unallocated_inodes.add(i)
+
+	for i in allocated_inodes:
+		if i in ifree_list:
+			print "ALLOCATED INODE", i, "ON FREELIST"
+
+	for i in unallocated_inodes:
+		if not i in ifree_list:
+			print "UNALLOCATED INODE", i, "NOT ON FREELIST"
 
 
 
