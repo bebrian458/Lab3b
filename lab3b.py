@@ -279,8 +279,10 @@ def main():
 		allocated_inodes.add(i)
 
 	# All inodes on ifree list should be in unallocated list
+	# Make sure unallocated inodes do not contain allocated inodes
 	for i in ifree_list:
-		unallocated_inodes.add(i)
+		if not i in allocated_inodes:
+			unallocated_inodes.add(i)
 
 	# Every unreferenced inode should be in unallocated list
 	for i in range (1, superblock.num_inodes):
