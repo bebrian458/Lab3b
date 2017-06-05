@@ -56,6 +56,7 @@ groupdesc = Groupdesc()
 bfree_list = []
 ifree_list = []
 inode_list = []
+marked_blocks = set()
 start_data_blocks = 1	# change later
 
 def readSuperblock(superblock):
@@ -130,7 +131,7 @@ def isValidBlock(block):
 	return 1
 
 def checkReserved(block):
-	if block.blocknum >= 0 and block.blocknum < start_data_blocks:
+	if block.blocknum > 0 and block.blocknum < start_data_blocks:
 		block.blockstate = "RESERVED"
 		print "RESERVED", block.blocktype, block.blocknum, "IN INODE", block.inode_num, "AT OFFSET", block.offset_num
 		return 1
@@ -173,10 +174,11 @@ def checkBlock(block):
 				updateState(block)
 
 	# At this point, referenced blocks should be assigned a state other than none
-	if block.blockstate == "NONE":
-		block.blockstate = "UNREFERENCED"
-		print "UNREFERENCED BLOCK", block.blocknum
+	# if block.blockstate == "NONE":
+	# 	block.blockstate = "UNREFERENCED"
+	# 	print "UNREFERENCED BLOCK", block.blocknum
 
+	marked_blocks.add(block.blocknum)
 
 
 def main():
@@ -186,17 +188,28 @@ def main():
 	readGroupdesc(groupdesc)
 	readBfree(bfree_list)
 	readIfree(ifree_list)
+	readInode(inode_list)
+
+	# Identify start of legal data blocks
 	blocks_occupied_by_itable = (superblock.inodesize*superblock.inodes_per_group)/superblock.blocksize
 	start_data_blocks =  blocks_occupied_by_itable + groupdesc.g_itable_num
-	readInode(inode_list)
+	
+	# Mark all reserved blocks
+	for i in range (1, start_data_blocks):
+		marked_blocks.add(i)
+	
+	# Check validity of ever block in inode
 	for i in inode_list:
-		# print i.block_pointers
-		# print "This is the ith index of inode list", i
-		# print i.block_pointers[12]
-		# print i.block_pointers[13]
-		# print i.block_pointers[14]
-		for index in range (0,11):
-			checkBlock(i.blocks[index])
+		for index in range (0,14):
+			if i.blocks[index] != 0:
+				checkBlock(i.blocks[index])
+
+	# print marked_blocks
+
+	# Print unreferenced blocks
+	for blocknum in range (1, superblock.num_blocks):
+			if not blocknum in bfree_list and not blocknum in marked_blocks:
+				print "UNREFERENCED BLOCK", blocknum
 
 
 
