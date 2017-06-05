@@ -4,7 +4,8 @@
 
 DIST = lab3b lab3b.py Makefile README
 
-default: # nothing to build
+default:
+	chmod +x lab3b
 
 dist:
 	tar -czf lab3b-204612203.tar.gz $(DIST)

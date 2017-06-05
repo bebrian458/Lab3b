@@ -147,7 +147,11 @@ def readDirent(list):
 		reader = csv.reader(csvfile, delimiter=',', quotechar='|')
 		for r in reader:
 			if r[0] == "DIRENT":
-				list.append(int(r[3]))
+				# Check if valid inode num
+				if int(r[3]) < 0 or int(r[3]) > superblock.num_inodes or (int(r[3]) > 2 and int(r[3]) < superblock.first_nr_ino):
+					print "DIRECTORY INODE", int(r[1]), "NAME", r[6], "INVALID INODE", int(r[3])
+				else:
+					list.append((int(r[3]), int(r[1]), r[6]))
 
 def isValidBlock(block):
 	
@@ -223,16 +227,21 @@ def checkMode(inode):
 def checkLinkCount(inode):
 	ref_count = 0
 	for i in directory_list:
-		if i == inode.inode_num:
+		if i[0] == inode.inode_num:
 			ref_count+=1
 	if ref_count != inode.numlinks:
 		print "INODE", inode.inode_num, "HAS", ref_count, "LINKS BUT LINKCOUNT IS", inode.numlinks
 
+def checkInodeRef(list):
+	for i in list:
+		if i[0] in unallocated_inodes:
+			print "DIRECTORY INODE", i[1], "NAME", i[2], "UNALLOCATED INODE", i[0]
+
 
 def main():
-	print "The input file name is:", arg1
+	# sys.stdout.write("The input file name is: " + str(arg1) + '\n')
 	readSuperblock(superblock)
-	print superblock.blocksize
+	#print superblock.blocksize
 	readGroupdesc(groupdesc)
 	readBfree(bfree_list)
 	readIfree(ifree_list)
@@ -247,7 +256,7 @@ def main():
 	# Mark all reserved blocks
 	for i in range (1, start_data_blocks):
 		marked_blocks.add(i)
-	
+
 	# Check validity of ever block in inode
 	for i in inode_list:
 		checkMode(i)
@@ -256,6 +265,7 @@ def main():
 			if i.blocks[index] != 0:
 				checkBlock(i.blocks[index])
 
+	# TODO: fix
 	for i in indirect_block_list:
 		checkBlock(i)
 
@@ -277,14 +287,18 @@ def main():
 		if not i in allocated_inodes and not i in unallocated_inodes:
 			unallocated_inodes.add(i)
 
+	# Allocated inodes should not be on freelist
 	for i in allocated_inodes:
 		if i in ifree_list:
 			print "ALLOCATED INODE", i, "ON FREELIST"
 
+	# Unallocated inodes should be on freelist
 	for i in unallocated_inodes:
 		if not i in ifree_list:
 			print "UNALLOCATED INODE", i, "NOT ON FREELIST"
 
+	# Check inode ref
+	checkInodeRef(directory_list)
 
 
 if __name__ == '__main__':
