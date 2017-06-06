@@ -116,17 +116,17 @@ def readInode(list, list2, list3):
 				for index in range(12, 24):
 					new_inode.block_pointers.append(int(r[index]))
 					new_block = Block(int(r[index]), "BLOCK", "NONE", int(r[1]), index-12)
-					list3.append(new_block)
+					# list3.append(new_block)
 					new_inode.blocks.append(new_block)
 				new_block = Block(int(r[24]), "INDIRECT BLOCK", "NONE", int(r[1]), 12)
-				list3.append(new_block)
+				# list3.append(new_block)
 				list2.append(new_block)
 				new_block = Block(int(r[25]), "DOUBLE INDIRECT BLOCK", "NONE", int(r[1]), 268)
 				list2.append(new_block)
-				list3.append(new_block)
+				# list3.append(new_block)
 				new_block = Block(int(r[26]), "TRIPPLE INDIRECT BLOCK", "NONE", int(r[1]), 65804)
 				list2.append(new_block)
-				list3.append(new_block)
+				# list3.append(new_block)
 				list.append(new_inode)
 
 def readIndirect(list, list2):
@@ -359,6 +359,14 @@ def main():
 
 	# for i in indirect_block_list:
 	# 	print i.blocknum, i.blockstate
+
+	# print "Printing block list"
+	# for i in block_list:
+	# 	print i.blocktype, i.blocknum
+
+	# print "Printing indirect_block_list"
+	# for i in indirect_block_list:
+	# 	print i.blocktype, i.blocknum
 
 	
 
