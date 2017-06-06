@@ -151,7 +151,8 @@ def readDirent(list):
 				if int(r[3]) < 0 or int(r[3]) > superblock.num_inodes or (int(r[3]) > 2 and int(r[3]) < superblock.first_nr_ino):
 					print "DIRECTORY INODE", int(r[1]), "NAME", r[6], "INVALID INODE", int(r[3])
 				else:
-					list.append((int(r[3]), int(r[1]), r[6]))
+					new_dirent = Dirent(int(r[1]), int(r[3]), r[6])
+					list.append(new_dirent)
 
 def isValidBlock(block):
 	
@@ -227,15 +228,18 @@ def checkMode(inode):
 def checkLinkCount(inode):
 	ref_count = 0
 	for i in directory_list:
-		if i[0] == inode.inode_num:
+		if i.child_inode_num == inode.inode_num:
 			ref_count+=1
 	if ref_count != inode.numlinks:
 		print "INODE", inode.inode_num, "HAS", ref_count, "LINKS BUT LINKCOUNT IS", inode.numlinks
 
 def checkInodeRef(list):
 	for i in list:
-		if i[0] in unallocated_inodes:
-			print "DIRECTORY INODE", i[1], "NAME", i[2], "UNALLOCATED INODE", i[0]
+		if i.child_inode_num in unallocated_inodes:
+			print "DIRECTORY INODE", i.parent_inode_num, "NAME", i.name, "UNALLOCATED INODE", i.child_inode_num
+
+
+
 
 
 def main():
