@@ -61,6 +61,7 @@ directory_list = []
 allocated_inodes = set()
 unallocated_inodes = set()
 marked_blocks = set()
+block_list = []
 start_data_blocks = 1	# change later
 
 def readSuperblock(superblock):
@@ -106,7 +107,7 @@ def readIfree(list):
 			if r[0] == "IFREE":
 				list.append(int(r[1]))
 
-def readInode(list, list2):
+def readInode(list, list2, list3):
 	with open(arg1, 'r') as csvfile:
 		reader = csv.reader(csvfile, delimiter=',', quotechar='|')
 		for r in reader:
@@ -115,31 +116,39 @@ def readInode(list, list2):
 				for index in range(12, 24):
 					new_inode.block_pointers.append(int(r[index]))
 					new_block = Block(int(r[index]), "BLOCK", "NONE", int(r[1]), index-12)
+					list3.append(new_block)
 					new_inode.blocks.append(new_block)
 				new_block = Block(int(r[24]), "INDIRECT BLOCK", "NONE", int(r[1]), 12)
+				list3.append(new_block)
 				list2.append(new_block)
 				new_block = Block(int(r[25]), "DOUBLE INDIRECT BLOCK", "NONE", int(r[1]), 268)
 				list2.append(new_block)
+				list3.append(new_block)
 				new_block = Block(int(r[26]), "TRIPPLE INDIRECT BLOCK", "NONE", int(r[1]), 65804)
 				list2.append(new_block)
+				list3.append(new_block)
 				list.append(new_inode)
 
-def readIndirect(list):
+def readIndirect(list, list2):
 	with open(arg1, 'r') as csvfile:
 		reader = csv.reader(csvfile, delimiter=',', quotechar='|')
 		for r in reader:
 			if r[0] == "INDIRECT":
 				if r[2] == "1":
 					new_block = Block(int(r[5]), "BLOCK", "NONE", int(r[1]), int(r[3]))
+					list2.append(new_block)
 					list.append(new_block)
 				if r[2] == "1":
 					new_block = Block(int(r[4]), "INDIRECT BLOCK", "NONE", int(r[1]), int(r[3]))
+					# list2.append(new_block)
 					list.append(new_block)
 				if r[2] == "2":
 					new_block = Block(int(r[4]), "DOUBLE INDIRECT BLOCK", "NONE", int(r[1]), int(r[3]))
+					# list2.append(new_block)
 					list.append(new_block)
 				if r[2] == "3":
 					new_block = Block(int(r[4]), "TRIPPLE INDIRECT BLOCK", "NONE", int(r[1]), iint(r[3]))
+					# list2.append(new_block)
 					list.append(new_block)
 
 def readDirent(list):
@@ -260,6 +269,23 @@ def checkInodeRef(list):
 			if i.child_inode_num != i.parent_inode_num:
 				print "DIRECTORY INODE", i.parent_inode_num, "NAME", i.name, "LINK TO INODE", i.child_inode_num, "SHOULD BE", i.parent_inode_num
 
+def checkDuplicates(list):
+	
+	for i in range(len(list)):
+		if isValidBlock(list[i]) == 1 and list[i].blocknum != 0:
+			if checkReserved(list[i], start_data_blocks) != 1:
+				if checkFree(list[i]) != 1:
+					temp = []
+					temp.append(list[i])
+					counter = i + 1
+					for j in range (counter,len(list)):
+						if list[j].blocknum == list[i].blocknum:
+							temp.append(list[j])
+					if len(temp) > 1:
+						for block in temp:
+							print "DUPLICATE", block.blocktype, block.blocknum, "IN INODE", block.inode_num, "AT OFFSET", block.offset_num
+
+
 
 
 def main():
@@ -269,8 +295,8 @@ def main():
 	readGroupdesc(groupdesc)
 	readBfree(bfree_list)
 	readIfree(ifree_list)
-	readInode(inode_list, indirect_block_list)
-	readIndirect(indirect_block_list)
+	readInode(inode_list, indirect_block_list, block_list)
+	readIndirect(indirect_block_list, block_list)
 	readDirent(directory_list)
 
 	# Identify start of legal data blocks
@@ -325,6 +351,11 @@ def main():
 
 	# Check inode ref
 	checkInodeRef(directory_list)
+
+	# for i in block_list:
+	# 	print i.blocknum
+
+	checkDuplicates(block_list)
 
 	# for i in indirect_block_list:
 	# 	print i.blocknum, i.blockstate
