@@ -116,17 +116,17 @@ def readInode(list, list2, list3):
 				for index in range(12, 24):
 					new_inode.block_pointers.append(int(r[index]))
 					new_block = Block(int(r[index]), "BLOCK", "NONE", int(r[1]), index-12)
-					# list3.append(new_block)
+					list3.append(new_block)
 					new_inode.blocks.append(new_block)
 				new_block = Block(int(r[24]), "INDIRECT BLOCK", "NONE", int(r[1]), 12)
-				# list3.append(new_block)
+				list3.append(new_block)
 				list2.append(new_block)
 				new_block = Block(int(r[25]), "DOUBLE INDIRECT BLOCK", "NONE", int(r[1]), 268)
 				list2.append(new_block)
-				# list3.append(new_block)
+				list3.append(new_block)
 				new_block = Block(int(r[26]), "TRIPPLE INDIRECT BLOCK", "NONE", int(r[1]), 65804)
 				list2.append(new_block)
-				# list3.append(new_block)
+				list3.append(new_block)
 				list.append(new_inode)
 
 def readIndirect(list, list2):
@@ -168,7 +168,7 @@ def isValidBlock(block):
 	# Check block number
 	if block.blocknum < 0 or block.blocknum > superblock.num_blocks:
 		block.blockstate = "INVALID"
-		print "INVALID", block.blocktype, block.blocknum, "IN INODE", block.inode_num, "AT OFFSET", block.offset_num
+		# print "INVALID", block.blocktype, block.blocknum, "IN INODE", block.inode_num, "AT OFFSET", block.offset_num
 		return 0
 
 	# Check inode number
@@ -182,14 +182,14 @@ def isValidBlock(block):
 def checkReserved(block, start_data_blocks):
 	if block.blocknum > 0 and block.blocknum < start_data_blocks:
 		block.blockstate = "RESERVED"
-		print "RESERVED", block.blocktype, block.blocknum, "IN INODE", block.inode_num, "AT OFFSET", block.offset_num
+		# print "RESERVED", block.blocktype, block.blocknum, "IN INODE", block.inode_num, "AT OFFSET", block.offset_num
 		return 1
 	return 0
 
 def checkFree(block):
 	if block.blocknum in bfree_list:
 		block.blockstate = "BFREE"
-		print "ALLOCATED BLOCK", block.blocknum, "ON FREELIST"
+		# print "ALLOCATED BLOCK", block.blocknum, "ON FREELIST"
 		return 1
 	return 0
 
@@ -217,9 +217,15 @@ def checkBlock(block, start_data_blocks):
 	'''
 
 	# Assign new states to the block
-	if isValidBlock(block) == 1:
-		if checkReserved(block, start_data_blocks) != 1:
-		 	if checkFree(block) != 1:
+	if isValidBlock(block) != 1:
+		print "INVALID", block.blocktype, block.blocknum, "IN INODE", block.inode_num, "AT OFFSET", block.offset_num
+	else:	
+		if checkReserved(block, start_data_blocks) == 1:
+			print "RESERVED", block.blocktype, block.blocknum, "IN INODE", block.inode_num, "AT OFFSET", block.offset_num
+		else:	
+		 	if checkFree(block) == 1:
+		 		print "ALLOCATED BLOCK", block.blocknum, "ON FREELIST"
+		 	else:	
 				updateState(block)
 		marked_blocks.add(block.blocknum)
 
