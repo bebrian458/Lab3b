@@ -170,7 +170,7 @@ def isValidBlock(block):
 
 	return 1
 
-def checkReserved(block):
+def checkReserved(block, start_data_blocks):
 	if block.blocknum > 0 and block.blocknum < start_data_blocks:
 		block.blockstate = "RESERVED"
 		print "RESERVED", block.blocktype, block.blocknum, "IN INODE", block.inode_num, "AT OFFSET", block.offset_num
@@ -192,7 +192,7 @@ def updateState(block):
 		block.blockstate = "DUPLICATE"
 		print "DUPLICATE", block.blocktype, block.blocknum, "IN INODE", block.inode_num, "AT OFFSET", block.offset_num
 
-def checkBlock(block):
+def checkBlock(block, start_data_blocks):
 	
 	'''
 	States:
@@ -209,7 +209,7 @@ def checkBlock(block):
 
 	# Assign new states to the block
 	if isValidBlock(block) == 1:
-		if checkReserved(block) != 1:
+		if checkReserved(block, start_data_blocks) != 1:
 		 	if checkFree(block) != 1:
 				updateState(block)
 		marked_blocks.add(block.blocknum)
@@ -276,7 +276,7 @@ def main():
 	# Identify start of legal data blocks
 	blocks_occupied_by_itable = (superblock.inodesize*superblock.inodes_per_group)/superblock.blocksize
 	start_data_blocks =  blocks_occupied_by_itable + groupdesc.g_itable_num
-	
+
 	# Mark all reserved blocks
 	for i in range (1, start_data_blocks):
 		marked_blocks.add(i)
@@ -287,11 +287,11 @@ def main():
 		checkLinkCount(i)
 		for index in range (0,12):	# might be 0-15, but will then need to take care of duplicates
 			if i.blocks[index] != 0:
-				checkBlock(i.blocks[index])
+				checkBlock(i.blocks[index], start_data_blocks)
 
 	# TODO: fix
 	for i in indirect_block_list:
-		checkBlock(i)
+		checkBlock(i, start_data_blocks)
 
 	# Print unreferenced blocks
 	for blocknum in range (1, superblock.num_blocks):
@@ -325,6 +325,9 @@ def main():
 
 	# Check inode ref
 	checkInodeRef(directory_list)
+
+	# for i in indirect_block_list:
+	# 	print i.blocknum, i.blockstate
 
 	
 
