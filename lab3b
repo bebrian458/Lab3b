@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# NAME: Brian Be, Leslie Liang
+# EMAIL: bebrian458@gmail.com, lliang9838@gmail.com
+# ID: 204612203, 204625818
+
 ARG=$1
 python lab3b.py $ARG
 

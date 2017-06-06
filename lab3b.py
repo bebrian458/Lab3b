@@ -1,3 +1,7 @@
+# NAME: Brian Be, Leslie Liang
+# EMAIL: bebrian458@gmail.com, lliang9838@gmail.com
+# ID: 204612203, 204625818
+
 import sys #For command line args
 import csv
 

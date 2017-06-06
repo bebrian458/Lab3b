@@ -1,6 +1,6 @@
-# NAME: Brian Be
-# EMAIL: bebrian458@gmail.com
-# UID: 204612203
+# NAME: Brian Be, Leslie Liang
+# EMAIL: bebrian458@gmail.com, lliang9838@gmail.com
+# ID: 204612203, 204625818
 
 DIST = lab3b lab3b.py Makefile README
 
