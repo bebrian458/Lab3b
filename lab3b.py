@@ -151,7 +151,7 @@ def readIndirect(list, list2):
 					# list2.append(new_block)
 					list.append(new_block)
 				if r[2] == "3":
-					new_block = Block(int(r[4]), "TRIPPLE INDIRECT BLOCK", "NONE", int(r[1]), iint(r[3]))
+					new_block = Block(int(r[4]), "TRIPPLE INDIRECT BLOCK", "NONE", int(r[1]), int(r[3]))
 					# list2.append(new_block)
 					list.append(new_block)
 

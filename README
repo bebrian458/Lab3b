@@ -2,6 +2,11 @@ NAME: Brian Be, Leslie Liang
 EMAIL: bebrian458@gmail.com, lliang9838@gmail.com
 ID: 204612203, 204625818
 
+Slip days
+=======================================================
+We will be using one of our remaining slip days.
+
+
 FILES
 ========================================================
 lab3b.py: Our main source code that analyzes the file system summaries generated from our lab3a.c code. The main objective of this code is to discover any inconsistencies and report it to stdout. 
