@@ -106,7 +106,7 @@ def readIfree(list):
 			if r[0] == "IFREE":
 				list.append(int(r[1]))
 
-def readInode(list):
+def readInode(list, list2):
 	with open(arg1, 'r') as csvfile:
 		reader = csv.reader(csvfile, delimiter=',', quotechar='|')
 		for r in reader:
@@ -117,11 +117,11 @@ def readInode(list):
 					new_block = Block(int(r[index]), "BLOCK", "NONE", int(r[1]), index-12)
 					new_inode.blocks.append(new_block)
 				new_block = Block(int(r[24]), "INDIRECT BLOCK", "NONE", int(r[1]), 12)
-				new_inode.blocks.append(new_block)
-				new_block = Block(int(r[25]), "DOUBLE INDIRECT BLOCK", "NONE", int(r[1]), 13)
-				new_inode.blocks.append(new_block)
-				new_block = Block(int(r[26]), "TRIPPLE INDIRECT BLOCK", "NONE", int(r[1]), 14)
-				new_inode.blocks.append(new_block)
+				list2.append(new_block)
+				new_block = Block(int(r[25]), "DOUBLE INDIRECT BLOCK", "NONE", int(r[1]), 268)
+				list2.append(new_block)
+				new_block = Block(int(r[26]), "TRIPPLE INDIRECT BLOCK", "NONE", int(r[1]), 65804)
+				list2.append(new_block)
 				list.append(new_inode)
 
 def readIndirect(list):
@@ -139,7 +139,7 @@ def readIndirect(list):
 					new_block = Block(int(r[4]), "DOUBLE INDIRECT BLOCK", "NONE", int(r[1]), int(r[3]))
 					list.append(new_block)
 				if r[2] == "3":
-					new_block = Block(int(r[4]), "TRIPPLE INDIRECT BLOCK", "NONE", int(r[1]), int(r[3]))
+					new_block = Block(int(r[4]), "TRIPPLE INDIRECT BLOCK", "NONE", int(r[1]), iint(r[3]))
 					list.append(new_block)
 
 def readDirent(list):
@@ -269,7 +269,7 @@ def main():
 	readGroupdesc(groupdesc)
 	readBfree(bfree_list)
 	readIfree(ifree_list)
-	readInode(inode_list)
+	readInode(inode_list, indirect_block_list)
 	readIndirect(indirect_block_list)
 	readDirent(directory_list)
 
@@ -326,6 +326,7 @@ def main():
 	# Check inode ref
 	checkInodeRef(directory_list)
 
+	
 
 if __name__ == '__main__':
 	try:
