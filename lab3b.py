@@ -234,11 +234,31 @@ def checkLinkCount(inode):
 		print "INODE", inode.inode_num, "HAS", ref_count, "LINKS BUT LINKCOUNT IS", inode.numlinks
 
 def checkInodeRef(list):
+	# Check unallocated node ref
 	for i in list:
 		if i.child_inode_num in unallocated_inodes:
 			print "DIRECTORY INODE", i.parent_inode_num, "NAME", i.name, "UNALLOCATED INODE", i.child_inode_num
 
+	# Check .
+	for i in list:
+		if i.parent_inode_num != i.child_inode_num and i.name == "'.'":
+			print "DIRECTORY INODE", i.parent_inode_num, "NAME", i.name, "LINK TO INODE", i.child_inode_num, "SHOULD BE", i.parent_inode_num
 
+	# Check ..
+	for i in list:
+		# General case
+		if i.parent_inode_num != 2 and i.name == "'..'":
+			for j in list:
+				if j.child_inode_num == i.parent_inode_num:
+					grandparent = j.parent_inode_num
+					break;
+			if i.child_inode_num != grandparent:
+				print "DIRECTORY INODE", i.parent_inode_num, "NAME", i.name, "LINK TO INODE", i.child_inode_num, "SHOULD BE", grandparent
+		
+		# Root directory special case
+		if i.parent_inode_num == 2 and i.name == "'..'":
+			if i.child_inode_num != i.parent_inode_num:
+				print "DIRECTORY INODE", i.parent_inode_num, "NAME", i.name, "LINK TO INODE", i.child_inode_num, "SHOULD BE", i.parent_inode_num
 
 
 
